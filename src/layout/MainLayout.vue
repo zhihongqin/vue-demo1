@@ -36,6 +36,11 @@
           <el-icon><Connection /></el-icon>
           <template #title>爬虫管理</template>
         </el-menu-item>
+
+        <el-menu-item index="/hot-keywords">
+          <el-icon><TrendCharts /></el-icon>
+          <template #title>热门搜索词</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -108,7 +113,7 @@ import { ref, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Briefcase, Odometer, Document, User, Connection,
+  Briefcase, Odometer, Document, User, Connection, TrendCharts,
   Expand, Fold, UserFilled, ArrowDown, Key, SwitchButton
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
@@ -122,6 +127,7 @@ const isCollapsed = ref(false)
 const activeMenu = computed(() => {
   const path = route.path
   if (path.startsWith('/cases')) return '/cases'
+  if (path.startsWith('/hot-keywords')) return '/hot-keywords'
   return path
 })
 

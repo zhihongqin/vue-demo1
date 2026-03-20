@@ -61,6 +61,12 @@ const router = createRouter({
           component: () => import('@/views/crawler/CrawlerView.vue'),
           meta: { title: '爬虫管理' }
         },
+        {
+          path: 'hot-keywords',
+          name: 'HotKeywords',
+          component: () => import('@/views/hotKeywords/HotKeywordView.vue'),
+          meta: { title: '热门搜索词' }
+        },
       ]
     },
     {
