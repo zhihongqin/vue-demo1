@@ -36,6 +36,10 @@ export const triggerScore = (id) =>
 export const markAiCompleted = (id) =>
   request.put(`/cases/${id}/ai-complete`)
 
+/** 推送案例至 FastGPT 知识库（管理员，异步） */
+export const syncFastgptKnowledge = (id) =>
+  request.post(`/cases/${id}/sync-fastgpt`)
+
 export const getTranslationRecords = (id) =>
   request.get(`/cases/${id}/translations`)
 

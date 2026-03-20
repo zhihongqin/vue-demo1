@@ -73,6 +73,14 @@
             <el-tag :type="aiStatusTag(row.aiStatus)" size="small">{{ aiStatusLabel(row.aiStatus) }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="fastgptSyncStatus" label="知识库" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="fastgptSyncTag(row.fastgptSyncStatus)" size="small">{{ fastgptSyncLabel(row.fastgptSyncStatus) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="fastgptSyncedAt" label="知识库同步时间" width="155" align="center">
+          <template #default="{ row }">{{ formatDate(row.fastgptSyncedAt) }}</template>
+        </el-table-column>
         <el-table-column label="删除状态" width="90" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.isDeleted === 1" type="danger" size="small">已删除</el-tag>
@@ -91,7 +99,7 @@
         <el-table-column prop="createdAt" label="创建时间" width="155">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="240" align="center" fixed="right">
+        <el-table-column label="操作" width="260" align="center" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" size="small" @click="$router.push(`/cases/${row.id}`)">详情</el-button>
             <template v-if="row.isDeleted !== 1">
@@ -105,6 +113,10 @@
                     <el-dropdown-item command="translate">触发翻译</el-dropdown-item>
                     <el-dropdown-item command="summary">触发摘要</el-dropdown-item>
                     <el-dropdown-item command="score">触发评分</el-dropdown-item>
+                    <el-dropdown-item
+                      command="syncFastgpt"
+                      :disabled="row.aiStatus !== 2 || row.isDeleted === 1 || row.fastgptSyncStatus === 1"
+                    >同步至知识库</el-dropdown-item>
                     <el-dropdown-item command="aiComplete" :disabled="row.aiStatus === 2">标记AI已完成</el-dropdown-item>
                     <el-dropdown-item divided command="softDelete" style="color:#E6A23C">逻辑删除</el-dropdown-item>
                     <el-dropdown-item command="hardDelete" style="color:#F56C6C">永久删除</el-dropdown-item>
@@ -143,7 +155,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, ArrowDown } from '@element-plus/icons-vue'
 import {
   getCaseList, softDeleteCase, restoreCase, hardDeleteCase,
-  triggerTranslation, triggerSummary, triggerScore, markAiCompleted
+  triggerTranslation, triggerSummary, triggerScore, markAiCompleted, syncFastgptKnowledge
 } from '@/api/cases'
 
 const router = useRouter()
@@ -166,10 +178,16 @@ const caseTypeTagMap = { 1: '', 2: 'danger', 3: 'warning', 4: 'success' }
 const aiStatusMap = { 0: '待处理', 1: '处理中', 2: '已完成', 3: '失败' }
 const aiStatusTagMap = { 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }
 
+/** FastGPT 知识库同步状态（与后端 fastgpt_sync_status 一致） */
+const fastgptSyncMap = { 0: '未同步', 1: '同步中', 2: '已同步', 3: '失败' }
+const fastgptSyncTagMap = { 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }
+
 const caseTypeLabel = (v) => caseTypeMap[v] || '-'
 const caseTypeTag = (v) => caseTypeTagMap[v] || ''
 const aiStatusLabel = (v) => aiStatusMap[v] ?? '-'
 const aiStatusTag = (v) => aiStatusTagMap[v] || 'info'
+const fastgptSyncLabel = (v) => fastgptSyncMap[v == null ? 0 : v] ?? '-'
+const fastgptSyncTag = (v) => fastgptSyncTagMap[v == null ? 0 : v] || 'info'
 const scoreColor = (v) => v >= 80 ? '#F56C6C' : v >= 60 ? '#E6A23C' : '#909399'
 const formatDate = (d) => d ? d.replace('T', ' ').slice(0, 16) : '-'
 
@@ -221,6 +239,15 @@ async function handleAction(cmd, row) {
   } else if (cmd === 'score') {
     await triggerScore(row.id)
     ElMessage.success('评分任务已提交')
+  } else if (cmd === 'syncFastgpt') {
+    await ElMessageBox.confirm(
+      `确定将案例「${row.titleZh || row.titleEn}」推送至 FastGPT 知识库吗？若再次推送，知识库中可能产生多条记录。`,
+      '同步知识库',
+      { type: 'info' }
+    )
+    await syncFastgptKnowledge(row.id)
+    ElMessage.success('知识库同步任务已提交，请稍后刷新查看状态')
+    loadData()
   } else if (cmd === 'aiComplete') {
     await ElMessageBox.confirm(
       `确定将案例「${row.titleZh || row.titleEn}」的 AI 状态强制标记为已完成吗？`,

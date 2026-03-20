@@ -15,6 +15,11 @@
               <el-dropdown-item command="enrich">触发字段补全</el-dropdown-item>
               <el-dropdown-item command="summary">触发摘要提取</el-dropdown-item>
               <el-dropdown-item command="score">触发重要性评分</el-dropdown-item>
+              <el-dropdown-item
+                command="syncFastgpt"
+                divided
+                :disabled="caseData.aiStatus !== 2 || caseData.fastgptSyncStatus === 1"
+              >推送至 FastGPT 知识库</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -30,6 +35,9 @@
             <div class="tags">
               <el-tag :type="caseTypeTag(caseData.caseType)" size="small">{{ caseTypeLabel(caseData.caseType) }}</el-tag>
               <el-tag :type="aiStatusTag(caseData.aiStatus)" size="small">AI: {{ aiStatusLabel(caseData.aiStatus) }}</el-tag>
+              <el-tag :type="fastgptSyncTag(caseData.fastgptSyncStatus)" size="small">
+                知识库: {{ fastgptSyncLabel(caseData.fastgptSyncStatus) }}
+              </el-tag>
               <el-tag v-if="caseData.importanceScore != null" :type="scoreTag(caseData.importanceScore)" size="small">
                 重要性: {{ caseData.importanceScore }}
               </el-tag>
@@ -58,6 +66,39 @@
           </el-descriptions-item>
           <el-descriptions-item label="涉及法律条文" :span="3">{{ caseData.legalProvisions || '-' }}</el-descriptions-item>
         </el-descriptions>
+      </el-card>
+
+      <!-- FastGPT 知识库 -->
+      <el-card class="detail-card">
+        <template #header>
+          <div class="card-header-row">
+            <span class="card-title">FastGPT 知识库</span>
+            <el-button
+              type="primary"
+              size="small"
+              :loading="syncFastgptLoading"
+              :disabled="caseData.aiStatus !== 2 || caseData.fastgptSyncStatus === 1"
+              @click="handleSyncFastgpt"
+            >
+              手动推送
+            </el-button>
+          </div>
+        </template>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="同步状态">
+            <el-tag :type="fastgptSyncTag(caseData.fastgptSyncStatus)" size="small">
+              {{ fastgptSyncLabel(caseData.fastgptSyncStatus) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="最近同步时间">{{ formatDate(caseData.fastgptSyncedAt) }}</el-descriptions-item>
+          <el-descriptions-item label="集合 ID" :span="2">
+            <span class="mono-text">{{ caseData.fastgptCollectionId || '-' }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="失败原因" :span="2" v-if="caseData.fastgptSyncStatus === 3 && caseData.fastgptSyncError">
+            <span class="error-text">{{ caseData.fastgptSyncError }}</span>
+          </el-descriptions-item>
+        </el-descriptions>
+        <p v-if="caseData.aiStatus !== 2" class="hint-muted">需 AI 处理完成（AI 状态为「已完成」）后方可推送知识库。</p>
       </el-card>
 
       <!-- AI摘要 -->
@@ -179,10 +220,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Edit, ArrowDown } from '@element-plus/icons-vue'
 import {
-  getCaseDetail, triggerTranslation, triggerEnrich, triggerSummary, triggerScore,
+  getCaseDetail, triggerTranslation, triggerEnrich, triggerSummary, triggerScore, syncFastgptKnowledge,
   getTranslationRecords, getSummaryRecords, getScoreRecords
 } from '@/api/cases'
 
@@ -196,6 +237,7 @@ const recordLoading = ref(false)
 const translationRecords = ref([])
 const summaryRecords = ref([])
 const scoreRecords = ref([])
+const syncFastgptLoading = ref(false)
 
 const scoreItems = [
   { label: '重要性', key: 'importanceScore' },
@@ -209,10 +251,15 @@ const caseTypeTagMap = { 1: '', 2: 'danger', 3: 'warning', 4: 'success' }
 const aiStatusMap = { 0: '待处理', 1: '处理中', 2: '已完成', 3: '失败' }
 const aiStatusTagMap = { 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }
 
+const fastgptSyncMap = { 0: '未同步', 1: '同步中', 2: '已同步', 3: '失败' }
+const fastgptSyncTagMap = { 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }
+
 const caseTypeLabel = (v) => caseTypeMap[v] || '-'
 const caseTypeTag = (v) => caseTypeTagMap[v] || ''
 const aiStatusLabel = (v) => aiStatusMap[v] ?? '-'
 const aiStatusTag = (v) => aiStatusTagMap[v] || 'info'
+const fastgptSyncLabel = (v) => fastgptSyncMap[v == null ? 0 : v] ?? '-'
+const fastgptSyncTag = (v) => fastgptSyncTagMap[v == null ? 0 : v] || 'info'
 const scoreTag = (v) => v >= 80 ? 'danger' : v >= 60 ? 'warning' : 'info'
 const progressColor = (v) => v >= 80 ? '#F56C6C' : v >= 60 ? '#E6A23C' : '#409EFF'
 const formatDate = (d) => d ? d.replace('T', ' ').slice(0, 16) : '-'
@@ -259,6 +306,32 @@ async function handleAction(cmd) {
   } else if (cmd === 'score') {
     await triggerScore(route.params.id)
     ElMessage.success('评分任务已提交，正在后台处理')
+  } else if (cmd === 'syncFastgpt') {
+    await handleSyncFastgpt()
+  }
+}
+
+async function handleSyncFastgpt() {
+  if (caseData.value?.aiStatus !== 2) {
+    ElMessage.warning('请先完成 AI 处理后再推送知识库')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      '确定将本案例推送至 FastGPT 知识库吗？若再次推送，知识库中可能产生多条记录。',
+      '同步知识库',
+      { type: 'info' }
+    )
+  } catch {
+    return
+  }
+  syncFastgptLoading.value = true
+  try {
+    await syncFastgptKnowledge(route.params.id)
+    ElMessage.success('知识库同步任务已提交，请稍后刷新页面查看状态')
+    await loadDetail()
+  } finally {
+    syncFastgptLoading.value = false
   }
 }
 
@@ -312,6 +385,25 @@ onMounted(() => {
 .score-label {
   font-size: 13px;
   color: #606266;
+}
+
+.mono-text {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.error-text {
+  color: #f56c6c;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hint-muted {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #909399;
 }
 
 .content-block {
