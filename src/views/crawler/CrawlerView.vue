@@ -143,6 +143,134 @@
       </el-col>
     </el-row>
 
+    <!-- 日本裁判所爬虫 -->
+    <el-card class="japan-card" style="margin-top:20px">
+      <template #header>
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <el-icon size="18" color="#E6162D"><Flag /></el-icon>
+            <span class="card-title">日本裁判所判例爬虫</span>
+            <el-tag :type="japanStatus.running ? 'success' : 'info'" size="small">
+              {{ japanStatus.running ? '运行中' : '空闲' }}
+            </el-tag>
+          </div>
+          <div style="display:flex;gap:8px">
+            <el-button text :icon="Refresh" size="small" @click="loadJapanStatus">刷新</el-button>
+            <el-link
+              href="https://www.courts.go.jp/hanrei/search1/index.html"
+              target="_blank"
+              type="primary"
+              :underline="false"
+              style="font-size:12px"
+            >官网 ↗</el-link>
+          </div>
+        </div>
+      </template>
+
+      <el-form :model="japanParams" label-width="120px" size="default">
+
+        <!-- 检索关键词 -->
+        <el-divider content-position="left"><span class="divider-label">检索关键词</span></el-divider>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="第1关键词" required>
+              <el-input v-model="japanParams.query1" placeholder="如：中華、中国" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="第2关键词">
+              <el-input v-model="japanParams.query2" placeholder="可选，AND 关系" clearable />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 判决日期范围 -->
+        <el-divider content-position="left"><span class="divider-label">判决日期范围（可选）</span></el-divider>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="起始元号">
+              <el-select v-model="japanParams.judgeGengoFrom" placeholder="元号" clearable style="width:120px;margin-right:8px">
+                <el-option v-for="g in gengoOptions" :key="g" :label="g" :value="g" />
+              </el-select>
+              <el-input v-model="japanParams.judgeYearFrom" placeholder="年" style="width:70px;margin-right:4px" />
+              <el-input v-model="japanParams.judgeMonthFrom" placeholder="月" style="width:60px;margin-right:4px" />
+              <el-input v-model="japanParams.judgeDayFrom" placeholder="日" style="width:60px" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="截止元号">
+              <el-select v-model="japanParams.judgeGengoTo" placeholder="元号" clearable style="width:120px;margin-right:8px">
+                <el-option v-for="g in gengoOptions" :key="g" :label="g" :value="g" />
+              </el-select>
+              <el-input v-model="japanParams.judgeYearTo" placeholder="年" style="width:70px;margin-right:4px" />
+              <el-input v-model="japanParams.judgeMonthTo" placeholder="月" style="width:60px;margin-right:4px" />
+              <el-input v-model="japanParams.judgeDayTo" placeholder="日" style="width:60px" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 法院过滤 -->
+        <el-divider content-position="left"><span class="divider-label">法院过滤（可选）</span></el-divider>
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="裁判所种别">
+              <el-select v-model="japanParams.courtType" placeholder="全部" clearable>
+                <el-option label="最高裁判所"   value="最高裁判所" />
+                <el-option label="高等裁判所"   value="高等裁判所" />
+                <el-option label="地方裁判所"   value="地方裁判所" />
+                <el-option label="家庭裁判所"   value="家庭裁判所" />
+                <el-option label="簡易裁判所"   value="簡易裁判所" />
+                <el-option label="行政不服審判所" value="行政不服審判所" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="裁判所名">
+              <el-input v-model="japanParams.courtName" placeholder="如：東京地方裁判所" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="支部名">
+              <el-input v-model="japanParams.branchName" placeholder="如：立川支部" clearable />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 采集控制 -->
+        <el-divider content-position="left"><span class="divider-label">采集控制</span></el-divider>
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="最大爬取页数">
+              <el-input-number v-model="japanParams.maxPages" :min="1" :max="20" :step="1" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 操作按钮 -->
+        <el-form-item>
+          <el-button
+            v-if="!japanStatus.running"
+            type="primary"
+            :icon="VideoPlay"
+            :loading="japanStartLoading"
+            @click="handleStartJapan"
+          >启动爬虫</el-button>
+          <el-button
+            v-else
+            type="danger"
+            :icon="VideoPause"
+            :loading="japanStopLoading"
+            @click="handleStopJapan"
+          >停止爬虫</el-button>
+          <el-button @click="resetJapanParams" :icon="Refresh">重置参数</el-button>
+          <el-text type="info" size="small" style="margin-left:12px">
+            日志：logs/crawler_japan_courts.log
+          </el-text>
+        </el-form-item>
+
+      </el-form>
+    </el-card>
+
     <!-- 关键词管理 -->
     <el-card class="keyword-card" style="margin-top:20px">
       <template #header>
@@ -212,11 +340,12 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Connection, Monitor, VideoPlay, VideoPause, Refresh, Collection } from '@element-plus/icons-vue'
+import { Connection, Monitor, VideoPlay, VideoPause, Refresh, Collection, Flag } from '@element-plus/icons-vue'
 import {
   startCrawler, queryCrawler, getCrawlerStatus,
   startPythonCrawler, stopPythonCrawler, getPythonCrawlerStatus,
-  getKeywords, addKeyword, removeKeyword
+  getKeywords, addKeyword, removeKeyword,
+  startJapanCrawler, stopJapanCrawler, getJapanCrawlerStatus
 } from '@/api/crawler'
 
 const crawlerStatus = ref({ running: false, message: '' })
@@ -233,6 +362,75 @@ const logContainerRef = ref()
 const keywords = ref([])
 const newKeyword = ref('')
 const keywordLoading = ref(false)
+
+// ── 日本裁判所爬虫 ────────────────────────────────────────────────────────────
+const gengoOptions = ['明治', '大正', '昭和', '平成', '令和']
+
+const defaultJapanParams = () => ({
+  query1: '中華',
+  query2: '',
+  judgeGengoFrom: '',
+  judgeYearFrom: '',
+  judgeMonthFrom: '',
+  judgeDayFrom: '',
+  judgeGengoTo: '',
+  judgeYearTo: '',
+  judgeMonthTo: '',
+  judgeDayTo: '',
+  courtType: '',
+  courtName: '',
+  branchName: '',
+  maxPages: 50,
+})
+
+const japanParams = reactive(defaultJapanParams())
+const japanStatus = ref({ running: false, message: '' })
+const japanStartLoading = ref(false)
+const japanStopLoading = ref(false)
+
+async function loadJapanStatus() {
+  try {
+    const res = await getJapanCrawlerStatus()
+    japanStatus.value = res.data || { running: false, message: '' }
+  } catch {}
+}
+
+async function handleStartJapan() {
+  if (!japanParams.query1?.trim()) {
+    ElMessage.warning('请输入第1检索关键词')
+    return
+  }
+  japanStartLoading.value = true
+  try {
+    const res = await startJapanCrawler({ ...japanParams })
+    ElMessage.success('日本裁判所爬虫已启动')
+    addLog(`日本裁判所爬虫已启动，关键词: ${japanParams.query1}`, 'success')
+    await loadJapanStatus()
+  } catch (e) {
+    addLog(`日本裁判所爬虫启动失败: ${e?.message || ''}`, 'error')
+  } finally {
+    japanStartLoading.value = false
+  }
+}
+
+async function handleStopJapan() {
+  japanStopLoading.value = true
+  try {
+    await stopJapanCrawler()
+    ElMessage.success('日本裁判所爬虫已停止')
+    addLog('日本裁判所爬虫已停止', 'warning')
+    await loadJapanStatus()
+  } catch (e) {
+    addLog(`停止失败: ${e?.message || ''}`, 'error')
+  } finally {
+    japanStopLoading.value = false
+  }
+}
+
+function resetJapanParams() {
+  Object.assign(japanParams, defaultJapanParams())
+  ElMessage.info('参数已重置')
+}
 
 function addLog(msg, type = 'info') {
   const time = new Date().toLocaleTimeString()
@@ -255,7 +453,7 @@ async function loadPythonStatus() {
 }
 
 async function refreshStatus() {
-  await Promise.all([loadCrawlerStatus(), loadPythonStatus()])
+  await Promise.all([loadCrawlerStatus(), loadPythonStatus(), loadJapanStatus()])
   ElMessage.success('状态已刷新')
 }
 
@@ -348,6 +546,7 @@ onMounted(() => {
   loadCrawlerStatus()
   loadPythonStatus()
   loadKeywords()
+  loadJapanStatus()
 })
 </script>
 
@@ -476,4 +675,21 @@ onMounted(() => {
 .keyword-tag { cursor: default; }
 
 .keyword-add { margin-top: 4px; }
+
+/* ── 日本裁判所面板 ──────────────────────────────────────────────────────── */
+.japan-card :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #555;
+}
+
+.japan-card :deep(.el-divider__text) {
+  padding: 0 8px;
+}
+
+.divider-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #E6162D;
+  letter-spacing: 0.5px;
+}
 </style>

@@ -57,6 +57,9 @@
             <el-form-item label="原始链接" prop="url">
               <el-input v-model="form.url" placeholder="案例原始访问链接（必填）" />
             </el-form-item>
+            <el-form-item label="原文PDF链接" prop="pdfUrl">
+              <el-input v-model="form.pdfUrl" placeholder="原文PDF链接（可选，日本裁判所等）" />
+            </el-form-item>
             <el-form-item label="关键词" prop="keywords">
               <el-input v-model="form.keywords" placeholder="多个关键词用逗号分隔" />
             </el-form-item>
@@ -142,7 +145,7 @@ const isEdit = computed(() => !!route.params.id)
 const form = reactive({
   titleEn: '', titleZh: '', caseNo: '', caseType: null,
   country: '', court: '', judgmentDate: null,
-  source: '', url: '', keywords: '', legalProvisions: '',
+  source: '', url: '', pdfUrl: '', keywords: '', legalProvisions: '',
   contentEn: '', contentZh: '',
   caseReason: '', disputeFocus: '', judgmentResult: '',
   summaryZh: '', importanceScore: null, scoreReason: '',

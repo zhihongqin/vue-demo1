@@ -64,6 +64,9 @@
           <el-descriptions-item label="原始链接" :span="2">
             <el-link :href="caseData.url" target="_blank" type="primary">{{ caseData.url }}</el-link>
           </el-descriptions-item>
+          <el-descriptions-item label="原文PDF" :span="3" v-if="caseData.pdfUrl">
+            <el-link :href="caseData.pdfUrl" target="_blank" type="primary">{{ caseData.pdfUrl }}</el-link>
+          </el-descriptions-item>
           <el-descriptions-item label="涉及法律条文" :span="3">{{ caseData.legalProvisions || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
@@ -141,16 +144,34 @@
           <div class="card-header-row">
             <span class="card-title">案例正文</span>
             <el-radio-group v-model="contentTab" size="small">
-              <el-radio-button value="en">英文原文</el-radio-button>
+              <el-radio-button value="en">原文</el-radio-button>
               <el-radio-button value="zh">中文翻译</el-radio-button>
+              <el-radio-button value="pdf" v-if="caseData.pdfUrl">原文PDF</el-radio-button>
             </el-radio-group>
           </div>
         </template>
         <div class="content-block" v-if="contentTab === 'en'">
-          {{ caseData.contentEn || '暂无英文原文' }}
+          {{ caseData.contentEn || '暂无原文内容' }}
         </div>
-        <div class="content-block" v-else>
+        <div class="content-block" v-else-if="contentTab === 'zh'">
           {{ caseData.contentZh || '暂无中文翻译，可触发AI翻译' }}
+        </div>
+        <div v-else-if="contentTab === 'pdf'" class="pdf-viewer-wrap">
+          <div class="pdf-toolbar">
+            <el-link :href="caseData.pdfUrl" target="_blank" type="primary" :underline="false">
+              <el-icon style="margin-right:4px"><Link /></el-icon>在新标签页打开PDF
+            </el-link>
+          </div>
+          <iframe
+            :src="caseData.pdfUrl"
+            class="pdf-iframe"
+            frameborder="0"
+            allowfullscreen
+          >
+            <p>您的浏览器不支持内嵌PDF，请
+              <a :href="caseData.pdfUrl" target="_blank">点击此处下载查看</a>
+            </p>
+          </iframe>
         </div>
       </el-card>
 
@@ -221,7 +242,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Edit, ArrowDown } from '@element-plus/icons-vue'
+import { ArrowLeft, Edit, ArrowDown, Link } from '@element-plus/icons-vue'
 import {
   getCaseDetail, triggerTranslation, triggerEnrich, triggerSummary, triggerScore, syncFastgptKnowledge,
   getTranslationRecords, getSummaryRecords, getScoreRecords
@@ -415,5 +436,25 @@ onMounted(() => {
   max-height: 500px;
   overflow-y: auto;
   padding: 4px;
+}
+
+.pdf-viewer-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdf-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 0;
+}
+
+.pdf-iframe {
+  width: 100%;
+  height: 780px;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background: #f5f5f5;
 }
 </style>
