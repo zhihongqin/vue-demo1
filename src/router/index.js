@@ -67,6 +67,12 @@ const router = createRouter({
           component: () => import('@/views/hotKeywords/HotKeywordView.vue'),
           meta: { title: '热门搜索词' }
         },
+        {
+          path: 'feedback',
+          name: 'Feedback',
+          component: () => import('@/views/feedback/FeedbackListView.vue'),
+          meta: { title: '用户反馈' }
+        },
       ]
     },
     {

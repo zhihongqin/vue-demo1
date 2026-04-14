@@ -72,75 +72,75 @@
         </el-card>
       </el-col>
 
-      <!-- Python 爬虫 -->
-      <el-col :span="12">
-        <el-card class="crawler-card">
-          <template #header>
-            <div class="card-header-row">
-              <div class="card-title-group">
-                <el-icon size="18" color="#67C23A"><Monitor /></el-icon>
-                <span class="card-title">Python 爬虫</span>
-              </div>
-              <el-button text :icon="Refresh" size="small" @click="loadPythonStatus">刷新</el-button>
-            </div>
-          </template>
+<!--      &lt;!&ndash; Python 爬虫 &ndash;&gt;-->
+<!--      <el-col :span="12">-->
+<!--        <el-card class="crawler-card">-->
+<!--          <template #header>-->
+<!--            <div class="card-header-row">-->
+<!--              <div class="card-title-group">-->
+<!--                <el-icon size="18" color="#67C23A"><Monitor /></el-icon>-->
+<!--                <span class="card-title">Python 爬虫</span>-->
+<!--              </div>-->
+<!--              <el-button text :icon="Refresh" size="small" @click="loadPythonStatus">刷新</el-button>-->
+<!--            </div>-->
+<!--          </template>-->
 
-          <div v-if="Object.keys(pythonStatus).length === 0" class="empty-tip">
-            <el-empty description="暂无 Python 爬虫" :image-size="80" />
-          </div>
+<!--          <div v-if="Object.keys(pythonStatus).length === 0" class="empty-tip">-->
+<!--            <el-empty description="暂无 Python 爬虫" :image-size="80" />-->
+<!--          </div>-->
 
-          <div v-else>
-            <div
-              v-for="(running, name) in pythonStatus"
-              :key="name"
-              class="python-crawler-item"
-            >
-              <div class="python-info">
-                <el-icon :color="running ? '#67C23A' : '#909399'">
-                  <component :is="running ? VideoPlay : VideoPause" />
-                </el-icon>
-                <span class="crawler-name">{{ name }}</span>
-                <el-tag :type="running ? 'success' : 'info'" size="small">
-                  {{ running ? '运行中' : '已停止' }}
-                </el-tag>
-              </div>
-              <div class="python-actions">
-                <el-button
-                  v-if="!running"
-                  type="success"
-                  size="small"
-                  :icon="VideoPlay"
-                  :loading="pythonActionLoading[name]"
-                  @click="handleStartPython(name)"
-                >
-                  启动
-                </el-button>
-                <el-button
-                  v-else
-                  type="danger"
-                  size="small"
-                  :icon="VideoPause"
-                  :loading="pythonActionLoading[name]"
-                  @click="handleStopPython(name)"
-                >
-                  停止
-                </el-button>
-              </div>
-            </div>
-          </div>
+<!--          <div v-else>-->
+<!--            <div-->
+<!--              v-for="(running, name) in pythonStatus"-->
+<!--              :key="name"-->
+<!--              class="python-crawler-item"-->
+<!--            >-->
+<!--              <div class="python-info">-->
+<!--                <el-icon :color="running ? '#67C23A' : '#909399'">-->
+<!--                  <component :is="running ? VideoPlay : VideoPause" />-->
+<!--                </el-icon>-->
+<!--                <span class="crawler-name">{{ name }}</span>-->
+<!--                <el-tag :type="running ? 'success' : 'info'" size="small">-->
+<!--                  {{ running ? '运行中' : '已停止' }}-->
+<!--                </el-tag>-->
+<!--              </div>-->
+<!--              <div class="python-actions">-->
+<!--                <el-button-->
+<!--                  v-if="!running"-->
+<!--                  type="success"-->
+<!--                  size="small"-->
+<!--                  :icon="VideoPlay"-->
+<!--                  :loading="pythonActionLoading[name]"-->
+<!--                  @click="handleStartPython(name)"-->
+<!--                >-->
+<!--                  启动-->
+<!--                </el-button>-->
+<!--                <el-button-->
+<!--                  v-else-->
+<!--                  type="danger"-->
+<!--                  size="small"-->
+<!--                  :icon="VideoPause"-->
+<!--                  :loading="pythonActionLoading[name]"-->
+<!--                  @click="handleStopPython(name)"-->
+<!--                >-->
+<!--                  停止-->
+<!--                </el-button>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
 
-          <el-divider />
+<!--          <el-divider />-->
 
-          <div class="add-python">
-            <div class="action-label">手动启动爬虫</div>
-            <div class="action-desc">输入爬虫名称（对应 {name}_crawler.py 文件）</div>
-            <el-input-group style="margin-top:8px">
-              <el-input v-model="newCrawlerName" placeholder="爬虫名称，如 site_a" />
-              <el-button type="primary" @click="handleStartPython(newCrawlerName)">启动</el-button>
-            </el-input-group>
-          </div>
-        </el-card>
-      </el-col>
+<!--          <div class="add-python">-->
+<!--            <div class="action-label">手动启动爬虫</div>-->
+<!--            <div class="action-desc">输入爬虫名称（对应 {name}_crawler.py 文件）</div>-->
+<!--            <el-input-group style="margin-top:8px">-->
+<!--              <el-input v-model="newCrawlerName" placeholder="爬虫名称，如 site_a" />-->
+<!--              <el-button type="primary" @click="handleStartPython(newCrawlerName)">启动</el-button>-->
+<!--            </el-input-group>-->
+<!--          </div>-->
+<!--        </el-card>-->
+<!--      </el-col>-->
     </el-row>
 
     <!-- 日本裁判所爬虫 -->
@@ -277,7 +277,7 @@
         <div class="card-header-row">
           <div class="card-title-group">
             <el-icon size="18" color="#E6A23C"><Collection /></el-icon>
-            <span class="card-title">全量采集关键词管理</span>
+            <span class="card-title">CourtListener全量采集关键词管理</span>
             <el-tag type="warning" size="small">{{ keywords.length }} 个</el-tag>
           </div>
           <el-button text :icon="Refresh" size="small" @click="loadKeywords">刷新</el-button>

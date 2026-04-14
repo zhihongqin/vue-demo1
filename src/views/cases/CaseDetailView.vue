@@ -12,7 +12,7 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="translate">触发翻译</el-dropdown-item>
-              <el-dropdown-item command="enrich">触发字段补全</el-dropdown-item>
+<!--              <el-dropdown-item command="enrich">触发字段补全</el-dropdown-item>-->
               <el-dropdown-item command="summary">触发摘要提取</el-dropdown-item>
               <el-dropdown-item command="score">触发重要性评分</el-dropdown-item>
               <el-dropdown-item
@@ -49,7 +49,7 @@
           <el-descriptions-item label="中文标题" :span="3">
             <strong>{{ caseData.titleZh || '-' }}</strong>
           </el-descriptions-item>
-          <el-descriptions-item label="英文标题" :span="3">{{ caseData.titleEn || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="原文标题" :span="3">{{ caseData.titleEn || '-' }}</el-descriptions-item>
           <el-descriptions-item label="案例编号">{{ caseData.caseNo || '-' }}</el-descriptions-item>
           <el-descriptions-item label="案件类型">{{ caseTypeLabel(caseData.caseType) }}</el-descriptions-item>
           <el-descriptions-item label="国家/地区">{{ caseData.country || '-' }}</el-descriptions-item>

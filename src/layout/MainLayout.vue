@@ -41,6 +41,11 @@
           <el-icon><TrendCharts /></el-icon>
           <template #title>热门搜索词</template>
         </el-menu-item>
+
+        <el-menu-item index="/feedback">
+          <el-icon><ChatDotRound /></el-icon>
+          <template #title>用户反馈</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -113,7 +118,7 @@ import { ref, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Briefcase, Odometer, Document, User, Connection, TrendCharts,
+  Briefcase, Odometer, Document, User, Connection, TrendCharts, ChatDotRound,
   Expand, Fold, UserFilled, ArrowDown, Key, SwitchButton
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
@@ -128,6 +133,7 @@ const activeMenu = computed(() => {
   const path = route.path
   if (path.startsWith('/cases')) return '/cases'
   if (path.startsWith('/hot-keywords')) return '/hot-keywords'
+  if (path.startsWith('/feedback')) return '/feedback'
   return path
 })
 
