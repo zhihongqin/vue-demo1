@@ -69,6 +69,7 @@
             </div>
             <div class="stat-label">{{ stat.label }}</div>
             <div v-if="stat.feedbackTotal != null" class="stat-sub">共 {{ stat.feedbackTotal }} 条反馈</div>
+            <div v-else-if="stat.hint" class="stat-sub stat-hint" :title="stat.hint">{{ stat.hint }}</div>
           </div>
         </div>
       </div>
@@ -178,6 +179,7 @@ import { getCaseList } from '@/api/cases'
 import { getUserCount } from '@/api/user'
 import { getAiProcessingCount } from '@/api/agent'
 import { getFeedbackStats } from '@/api/feedback'
+import { getCrawlerStatus, getPythonCrawlerStatus } from '@/api/crawler'
 import {
   Document, User, Connection, Plus, Lightning,
   InfoFilled, ArrowRight, ChatDotRound
@@ -201,7 +203,14 @@ const stats = ref([
     feedbackPending: true,
     feedbackTotal: null
   },
-  { label: '爬虫状态', value: '运行中', color: '#F56C6C', icon: markRaw(Connection), link: null },
+  {
+    label: '爬虫状态',
+    value: '—',
+    color: '#909399',
+    icon: markRaw(Connection),
+    link: '/crawler',
+    hint: ''
+  },
 ])
 
 const caseTypeMap = { 1: '民事', 2: '刑事', 3: '行政', 4: '商事' }
@@ -216,14 +225,61 @@ const aiStatusTag = (v) => aiStatusTagMap[v] || 'info'
 const scoreColor = (v) => v >= 80 ? '#F56C6C' : v >= 60 ? '#E6A23C' : '#909399'
 const formatDate = (d) => d ? d.replace('T', ' ').slice(0, 16) : '-'
 
+const CRAWLER_STAT_INDEX = 4
+
+function applyCrawlerDashboardStats(clRes, pyRes) {
+  const bothFailed = clRes.status !== 'fulfilled' && pyRes.status !== 'fulfilled'
+  if (bothFailed) {
+    stats.value[CRAWLER_STAT_INDEX].value = '未知'
+    stats.value[CRAWLER_STAT_INDEX].color = '#909399'
+    stats.value[CRAWLER_STAT_INDEX].hint = '状态接口暂不可用'
+    return
+  }
+
+  let courtRunning = false
+  if (clRes.status === 'fulfilled' && clRes.value?.data != null) {
+    courtRunning = !!clRes.value.data.running
+  }
+
+  const pyData = pyRes.status === 'fulfilled' ? (pyRes.value?.data || {}) : {}
+  const runningPythons = Object.entries(pyData)
+    .filter(([, v]) => v === true)
+    .map(([k]) => k)
+
+  const anyRunning = courtRunning || runningPythons.length > 0
+  stats.value[CRAWLER_STAT_INDEX].value = anyRunning ? '运行中' : '空闲'
+  stats.value[CRAWLER_STAT_INDEX].color = anyRunning ? '#E6A23C' : '#67C23A'
+
+  const parts = []
+  if (clRes.status === 'fulfilled') {
+    parts.push(courtRunning ? 'CourtListener 采集中' : 'CourtListener 空闲')
+  } else {
+    parts.push('CourtListener 未获取')
+  }
+  if (pyRes.status === 'fulfilled') {
+    if (runningPythons.length > 0) {
+      parts.push(`Python：${runningPythons.join('、')}`)
+    } else if (Object.keys(pyData).length > 0) {
+      parts.push('Python：无运行')
+    } else {
+      parts.push('Python：暂无脚本')
+    }
+  } else {
+    parts.push('Python 状态未获取')
+  }
+  stats.value[CRAWLER_STAT_INDEX].hint = parts.join(' · ')
+}
+
 onMounted(async () => {
   loading.value = true
   try {
-    const [caseRes, countRes, aiRes, fbRes] = await Promise.allSettled([
+    const [caseRes, countRes, aiRes, fbRes, clStatusRes, pyStatusRes] = await Promise.allSettled([
       getCaseList({ pageNum: 1, pageSize: 8 }),
       getUserCount(),
       getAiProcessingCount(),
-      getFeedbackStats()
+      getFeedbackStats(),
+      getCrawlerStatus(),
+      getPythonCrawlerStatus()
     ])
     if (caseRes.status === 'fulfilled') {
       recentCases.value = caseRes.value.data?.records || []
@@ -250,6 +306,7 @@ onMounted(async () => {
       stats.value[3].feedbackTotal = total
       stats.value[3].color = pending > 0 ? '#E6A23C' : '#67C23A'
     }
+    applyCrawlerDashboardStats(clStatusRes, pyStatusRes)
   } finally {
     loading.value = false
   }
@@ -321,6 +378,14 @@ onMounted(async () => {
   font-size: 12px;
   color: #c0c4cc;
   margin-top: 4px;
+}
+
+.stat-hint {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
 }
 
 .feedback-quick-badge {
