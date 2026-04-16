@@ -25,15 +25,28 @@
             <el-alert :title="crawlerStatus.message" type="info" :closable="false" show-icon />
           </div>
 
+          <div class="courtlistener-params courtlistener-global" style="margin-bottom:12px">
+            <span class="param-label">每关键词最多列表页数（max-pages）</span>
+            <el-input-number
+              v-model="courtListenerMaxPages"
+              :min="1"
+              :max="5"
+              :step="1"
+              :disabled="crawlerStatus.running"
+              controls-position="left"
+            />
+          </div>
+
           <div class="action-group">
             <div class="action-item">
               <div class="action-label">全量采集</div>
-              <div class="action-desc">遍历所有预设关键词进行采集（异步执行）</div>
+              <div class="action-desc">遍历所有预设关键词进行采集（异步执行，页数见上方）</div>
               <el-button
                 type="primary"
                 :icon="VideoPlay"
                 :loading="startLoading"
                 :disabled="crawlerStatus.running"
+                style="margin-top:8px"
                 @click="handleStartCrawler"
               >
                 启动全量采集
@@ -44,7 +57,7 @@
 
             <div class="action-item">
               <div class="action-label">按关键词采集</div>
-              <div class="action-desc">异步执行，适合测试或补采单个关键词</div>
+              <div class="action-desc">异步执行，适合测试或补采单个关键词（页数见上方）</div>
               <el-input-group style="margin-top:8px">
                 <el-input
                   v-model="queryKeyword"
@@ -59,9 +72,9 @@
                   开始采集
                 </el-button>
               </el-input-group>
-              <div v-if="queryResult" class="query-result">
+              <div v-if="querySubmitNotice" class="query-result">
                 <el-alert
-                  :title="`关键词「${queryResult.keyword}」采集完成，新入库 ${queryResult.savedCount} 条`"
+                  :title="querySubmitNotice"
                   type="success"
                   :closable="false"
                   show-icon
@@ -318,22 +331,22 @@
       </div>
     </el-card>
 
-    <!-- 操作日志 -->
-    <el-card class="log-card" style="margin-top:20px">
-      <template #header>
-        <div class="card-header-row">
-          <span class="card-title">操作日志</span>
-          <el-button text size="small" @click="logs = []">清空</el-button>
-        </div>
-      </template>
-      <div class="log-container" ref="logContainerRef">
-        <div v-if="logs.length === 0" class="empty-tip">暂无操作记录</div>
-        <div v-for="(log, i) in logs" :key="i" class="log-item" :class="log.type">
-          <span class="log-time">{{ log.time }}</span>
-          <span class="log-msg">{{ log.msg }}</span>
-        </div>
-      </div>
-    </el-card>
+<!--    &lt;!&ndash; 操作日志 &ndash;&gt;-->
+<!--    <el-card class="log-card" style="margin-top:20px">-->
+<!--      <template #header>-->
+<!--        <div class="card-header-row">-->
+<!--          <span class="card-title">操作日志</span>-->
+<!--          <el-button text size="small" @click="logs = []">清空</el-button>-->
+<!--        </div>-->
+<!--      </template>-->
+<!--      <div class="log-container" ref="logContainerRef">-->
+<!--        <div v-if="logs.length === 0" class="empty-tip">暂无操作记录</div>-->
+<!--        <div v-for="(log, i) in logs" :key="i" class="log-item" :class="log.type">-->
+<!--          <span class="log-time">{{ log.time }}</span>-->
+<!--          <span class="log-msg">{{ log.msg }}</span>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </el-card>-->
   </div>
 </template>
 
@@ -354,7 +367,10 @@ const pythonActionLoading = reactive({})
 const startLoading = ref(false)
 const queryLoading = ref(false)
 const queryKeyword = ref('')
-const queryResult = ref(null)
+/** 与后端 courtlistener.max-pages 默认一致，可在页面调整 */
+const courtListenerMaxPages = ref(10)
+/** 按关键词提交后接口返回的提示（异步任务已启动，非即时入库结果） */
+const querySubmitNotice = ref('')
 const newCrawlerName = ref('')
 const logs = ref([])
 const logContainerRef = ref()
@@ -380,7 +396,7 @@ const defaultJapanParams = () => ({
   courtType: '',
   courtName: '',
   branchName: '',
-  maxPages: 50,
+  maxPages: 1,
 })
 
 const japanParams = reactive(defaultJapanParams())
@@ -491,9 +507,9 @@ async function handleRemoveKeyword(kw) {
 async function handleStartCrawler() {
   startLoading.value = true
   try {
-    await startCrawler()
+    await startCrawler(courtListenerMaxPages.value)
     ElMessage.success('全量采集任务已启动（异步执行中）')
-    addLog('全量采集任务已启动', 'success')
+    addLog(`全量采集任务已启动，每关键词最多 ${courtListenerMaxPages.value} 页`, 'success')
     await loadCrawlerStatus()
   } finally {
     startLoading.value = false
@@ -506,11 +522,15 @@ async function handleQueryCrawler() {
     return
   }
   queryLoading.value = true
-  queryResult.value = null
+  querySubmitNotice.value = ''
   try {
-    const res = await queryCrawler(queryKeyword.value.trim())
-    queryResult.value = res.data
-    addLog(`关键词「${res.data.keyword}」采集完成，新入库 ${res.data.savedCount} 条`, 'success')
+    const res = await queryCrawler(queryKeyword.value.trim(), courtListenerMaxPages.value)
+    const msg = res.message || '任务已提交'
+    querySubmitNotice.value = msg
+    addLog(
+      `关键词「${queryKeyword.value.trim()}」已提交采集（每词最多 ${courtListenerMaxPages.value} 页）：${msg}`,
+      'success'
+    )
   } finally {
     queryLoading.value = false
   }
@@ -603,6 +623,25 @@ onMounted(() => {
 }
 
 .query-result { margin-top: 12px; }
+
+.courtlistener-global {
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.courtlistener-params {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.courtlistener-params .param-label {
+  font-size: 13px;
+  color: #606266;
+  white-space: nowrap;
+}
 
 .python-crawler-item {
   display: flex;

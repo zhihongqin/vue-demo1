@@ -1,10 +1,25 @@
 import request from '@/utils/request'
 
-export const startCrawler = () =>
-  request.post('/admin/crawler/start')
+/**
+ * 启动 CourtListener 全量采集
+ * @param {number} [maxPages] - 每个关键词最多爬取页数；不传则由后端使用配置文件默认值
+ */
+export const startCrawler = (maxPages) => {
+  const params = {}
+  if (maxPages != null && maxPages !== '') params.maxPages = maxPages
+  return request.post('/admin/crawler/start', null, { params })
+}
 
-export const queryCrawler = (keyword) =>
-  request.post('/admin/crawler/query', null, { params: { keyword } })
+/**
+ * 按单个关键词采集 CourtListener
+ * @param {string} keyword
+ * @param {number} [maxPages] - 该关键词最多爬取页数；不传则后端用配置默认值
+ */
+export const queryCrawler = (keyword, maxPages) => {
+  const params = { keyword }
+  if (maxPages != null && maxPages !== '') params.maxPages = maxPages
+  return request.post('/admin/crawler/query', null, { params })
+}
 
 export const getCrawlerStatus = () =>
   request.get('/admin/crawler/status')
