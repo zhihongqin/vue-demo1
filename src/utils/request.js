@@ -4,7 +4,9 @@ import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.DEV
+      ? '/api'
+      : 'http://43.138.242.201:8080/api',
   timeout: 30000,
 })
 

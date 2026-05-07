@@ -187,8 +187,8 @@
                   <el-tag :type="aiStatusTag(row.status)" size="small">{{ aiStatusLabel(row.status) }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="aiModel" label="模型" width="120" />
-              <el-table-column prop="tokenUsed" label="Token" width="80" align="center" />
+<!--              <el-table-column prop="aiModel" label="模型" width="120" />-->
+<!--              <el-table-column prop="tokenUsed" label="Token" width="80" align="center" />-->
               <el-table-column prop="errorMsg" label="错误信息" show-overflow-tooltip />
               <el-table-column prop="createdAt" label="创建时间" width="155">
                 <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>

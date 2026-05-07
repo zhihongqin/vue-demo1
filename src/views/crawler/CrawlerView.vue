@@ -30,7 +30,7 @@
             <el-input-number
               v-model="courtListenerMaxPages"
               :min="1"
-              :max="5"
+              :max="10"
               :step="1"
               :disabled="crawlerStatus.running"
               controls-position="left"

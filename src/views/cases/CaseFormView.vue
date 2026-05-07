@@ -5,7 +5,7 @@
       <el-button class="back-btn" :icon="ArrowLeft" @click="$router.back()">返回</el-button>
       <div class="header-title">
         <h2>{{ isEdit ? '编辑案例' : '新增案例' }}</h2>
-        <span class="header-sub">{{ isEdit ? '修改案例信息及AI处理结果' : '填写案例基本信息，提交后AI自动处理' }}</span>
+        <span class="header-sub">{{ isEdit ? '修改案例信息及AI处理结果' : '填写案例基本信息，提交' }}</span>
       </div>
     </div>
 
@@ -236,7 +236,7 @@
       <div class="form-footer">
         <el-button size="large" @click="$router.back()">取消</el-button>
         <el-button size="large" type="primary" :loading="submitLoading" @click="handleSubmit">
-          {{ isEdit ? '保存修改' : '提交并启动AI处理' }}
+          {{ isEdit ? '保存修改' : '提交' }}
         </el-button>
       </div>
     </el-form>
