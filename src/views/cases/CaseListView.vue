@@ -110,7 +110,10 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="translate">触发翻译</el-dropdown-item>
+                    <el-dropdown-item command="process">
+                      <el-icon><MagicStick /></el-icon>一键AI处理
+                    </el-dropdown-item>
+                    <el-dropdown-item divided command="translate">触发翻译</el-dropdown-item>
                     <el-dropdown-item command="summary">触发摘要</el-dropdown-item>
                     <el-dropdown-item command="score">触发评分</el-dropdown-item>
                     <el-dropdown-item
@@ -152,10 +155,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, ArrowDown } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, ArrowDown, MagicStick } from '@element-plus/icons-vue'
 import {
   getCaseList, softDeleteCase, restoreCase, hardDeleteCase,
-  triggerTranslation, triggerSummary, triggerScore, markAiCompleted, syncFastgptKnowledge
+  processCase, triggerTranslation, triggerSummary, triggerScore, markAiCompleted, syncFastgptKnowledge
 } from '@/api/cases'
 
 const router = useRouter()
@@ -230,7 +233,16 @@ function handleSortChange({ prop, order }) {
 }
 
 async function handleAction(cmd, row) {
-  if (cmd === 'translate') {
+  if (cmd === 'process') {
+    await ElMessageBox.confirm(
+      `确定对案例「${row.titleZh || row.titleEn}」启动完整AI处理流程（翻译 → 摘要 → 评分）吗？`,
+      '一键AI处理',
+      { type: 'info', confirmButtonText: '确认处理' }
+    )
+    await processCase(row.id)
+    ElMessage.success('AI处理任务已提交，正在后台处理')
+    loadData()
+  } else if (cmd === 'translate') {
     await triggerTranslation(row.id)
     ElMessage.success('翻译任务已提交')
   } else if (cmd === 'summary') {

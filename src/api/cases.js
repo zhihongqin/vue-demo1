@@ -21,6 +21,10 @@ export const restoreCase = (id) =>
 export const hardDeleteCase = (id) =>
   request.delete(`/cases/${id}/permanent`)
 
+/** 一键触发完整 AI 处理流程（翻译 → 摘要 → 评分，管理员） */
+export const processCase = (id) =>
+  request.post(`/cases/${id}/process`)
+
 export const triggerTranslation = (id) =>
   request.post(`/cases/${id}/translate`)
 

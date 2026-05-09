@@ -5,8 +5,15 @@
       <h2>案例详情</h2>
       <div class="header-actions" v-if="caseData">
         <el-button :icon="Edit" @click="$router.push(`/cases/${caseData.id}/edit`)">编辑</el-button>
+        <el-button
+          type="primary"
+          :loading="processCaseLoading"
+          @click="handleProcessCase"
+        >
+          <el-icon style="margin-right:4px"><MagicStick /></el-icon>一键AI处理
+        </el-button>
         <el-dropdown @command="handleAction">
-          <el-button type="primary">
+          <el-button>
             AI操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </el-button>
           <template #dropdown>
@@ -242,9 +249,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Edit, ArrowDown, Link } from '@element-plus/icons-vue'
+import { ArrowLeft, Edit, ArrowDown, Link, MagicStick } from '@element-plus/icons-vue'
 import {
-  getCaseDetail, triggerTranslation, triggerEnrich, triggerSummary, triggerScore, syncFastgptKnowledge,
+  getCaseDetail, processCase, triggerTranslation, triggerEnrich, triggerSummary, triggerScore, syncFastgptKnowledge,
   getTranslationRecords, getSummaryRecords, getScoreRecords
 } from '@/api/cases'
 
@@ -259,6 +266,7 @@ const translationRecords = ref([])
 const summaryRecords = ref([])
 const scoreRecords = ref([])
 const syncFastgptLoading = ref(false)
+const processCaseLoading = ref(false)
 
 const scoreItems = [
   { label: '重要性', key: 'importanceScore' },
@@ -329,6 +337,26 @@ async function handleAction(cmd) {
     ElMessage.success('评分任务已提交，正在后台处理')
   } else if (cmd === 'syncFastgpt') {
     await handleSyncFastgpt()
+  }
+}
+
+async function handleProcessCase() {
+  try {
+    await ElMessageBox.confirm(
+      '确定启动完整AI处理流程（翻译 → 摘要 → 评分）吗？处理期间案例状态将变为「处理中」。',
+      '一键AI处理',
+      { type: 'info', confirmButtonText: '确认处理' }
+    )
+  } catch {
+    return
+  }
+  processCaseLoading.value = true
+  try {
+    await processCase(route.params.id)
+    ElMessage.success('AI处理任务已提交，正在后台处理')
+    await loadDetail()
+  } finally {
+    processCaseLoading.value = false
   }
 }
 
