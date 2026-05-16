@@ -48,6 +48,18 @@
         </el-form-item>
       </el-form>
     </div>
+
+    <div class="login-footer">
+      <a
+        href="https://beian.mps.gov.cn/#/query/webSearch?code=45088102000324"
+        rel="noreferrer"
+        target="_blank"
+        class="beian-link"
+      >
+        <img src="/beian-icon.png" alt="公安备案图标" class="beian-icon" />
+        <span>桂公网安备45088102000324号</span>
+      </a>
+    </div>
   </div>
 </template>
 
@@ -91,6 +103,7 @@ async function handleLogin() {
 <style scoped>
 .login-page {
   min-height: 100vh;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,5 +164,33 @@ async function handleLogin() {
 
 .login-btn:hover {
   background: linear-gradient(135deg, #337ecc, #409EFF);
+}
+
+.login-footer {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+}
+
+.beian-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.beian-link:hover {
+  color: #ffffff;
+}
+
+.beian-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 </style>

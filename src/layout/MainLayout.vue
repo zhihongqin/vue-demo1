@@ -95,6 +95,19 @@
       <el-main class="main-content">
         <router-view />
       </el-main>
+
+      <!-- 底部备案信息 -->
+      <el-footer class="site-footer" height="40px">
+        <a
+          href="https://beian.mps.gov.cn/#/query/webSearch?code=45088102000324"
+          rel="noreferrer"
+          target="_blank"
+          class="beian-link"
+        >
+          <img src="/beian-icon.png" alt="公安备案图标" class="beian-icon" />
+          <span>桂公网安备45088102000324号</span>
+        </a>
+      </el-footer>
     </el-container>
   </el-container>
 
@@ -312,5 +325,34 @@ async function handleCommand(command) {
   overflow-y: auto;
   background: #f0f2f5;
   padding: 20px;
+}
+
+.site-footer {
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.beian-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  font-size: 13px;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.beian-link:hover {
+  color: #409EFF;
+}
+
+.beian-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 </style>
